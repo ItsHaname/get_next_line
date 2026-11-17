@@ -1,69 +1,78 @@
 #include "get_next_line_bonus.h"
-#include "get_next_line.h"
 
-static  char *lire_fichier(int fd, char* reserve)
+static char	*lire_fichier(int fd, char *reserve)
 {
-	int  octets_lus;
-	char *buffer;
+	int		octets_lus;
+	char	*buffer;
 
-	buffer = malloc(sizeof(char) * BUFFER_SIZE);
-	if(!buffer)
-		return(NULL);
+	buffer = malloc(sizeof(char) * (BUFFER_SIZE + 1));
+	if (!buffer)
+		return (free(reserve), NULL);
 	octets_lus = 1;
-	while(octets_lus > 0 && !ft_strchr(reserve,'\n'))
+	while (octets_lus > 0 && !ft_strchr(reserve, '\n'))
 	{
-		octets_lus = read(fd,buffer,BUFFER_SIZE);
-		if(octets_lus < 0)
-			return (free(reserve),free(buffer),NULL);
+		octets_lus = read(fd, buffer, BUFFER_SIZE);
+		if (octets_lus < 0)
+			return (free(reserve), free(buffer), NULL);
 		buffer[octets_lus] = '\0';
-		reserve = ft_strjoin(reserve,buffer);
-		if(reserve == NULL)
-			break;
+		reserve = ft_strjoin(reserve, buffer);
+		if (reserve == NULL)
+			break ;
 	}
 	free(buffer);
 	return (reserve);
 }
 
-static char* extraire_ligne(char *reserve)
+static char	*extraire_ligne(char *reserve)
 {
 	int		i;
 
-	if(reserve[0]=='\0'|| reserve == NULL)
-		return(NULL);
+	if (reserve == NULL || reserve[0] == '\0')
+		return (NULL);
 	i = 0;
-	while(reserve[i] && reserve[i] != '\n')
+	while (reserve[i] && reserve[i] != '\n')
 		i++;
-	if(reserve[i] == '\n')
+	if (reserve[i] == '\n')
 		i++;
-	return(ft_substr(reserve,0,i));
+	return (ft_substr(reserve, 0, i));
 }
-static  char *nettoyer_reserve(char *reserve)
+
+static char	*nettoyer_reserve(char *reserve)
 {
 	int		i;
 	char	*new;
-	if(reserve == NULL || reserve[0] == '\0')
-		return(NULL);
+
+	if (reserve == NULL)
+		return (NULL);
 	i = 0;
-	while(reserve[i] && reserve[i] != '\n')
+	while (reserve[i] && reserve[i] != '\n')
 		i++;
-	if(reserve[i] == '\n')
+	if (reserve[i] == '\n')
 		i++;
-	new = ft_substr(reserve,i,ft_strlen(reserve) - i);
-	return(new);
+	if (reserve[i] == '\0')
+		return (free(reserve), NULL);
+	new = ft_substr(reserve, i, ft_strlen(reserve) - i);
+	free(reserve);
+	return (new);
 }
-char  *get_next_line(int fd)
+
+char	*get_next_line(int fd)
 {
-	static char reserve[fd_max];
-	char *ligne;
+	static char	*reserve[FD_MAX];
+	char		*ligne;
+
+	if (fd < 0 || fd >= FD_MAX || BUFFER_SIZE <= 0)
+		return (NULL);
 	reserve[fd] = lire_fichier(fd, reserve[fd]);
-	ligne = extraire_ligne(reserve);
-	if(!ligne)
+	if (!reserve[fd])
+		return (NULL);
+	ligne = extraire_ligne(reserve[fd]);
+	if (!ligne)
 	{
-		free(reserve);
-		free(ligne);
-		return NULL;
+		free(reserve[fd]);
+		reserve[fd] = NULL;
+		return (NULL);
 	}
 	reserve[fd] = nettoyer_reserve(reserve[fd]);
 	return (ligne);
-
 }

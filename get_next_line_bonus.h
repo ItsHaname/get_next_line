@@ -8,6 +8,10 @@
 #  define BUFFER_SIZE 42
 # endif
 
+# ifndef FD_MAX
+#  define FD_MAX 1024
+# endif
+
 char	*get_next_line(int fd);
 
 size_t	ft_strlen(const char *s);
