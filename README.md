@@ -89,7 +89,7 @@ printf "one\ntwo" | ./a.out   # read the standard input
 
 ## Algorithm
 
-`get_next_line` keeps a static **stash**: the characters already read but not yet
+`get_next_line` keeps a static **stash** (`reserve` in the code): the characters already read but not yet
 returned.
 
 | Step | What happens |
@@ -97,15 +97,15 @@ returned.
 | 1. Read | While the stash has no `\n` and `read` returns more than 0, read `BUFFER_SIZE` bytes and append them to the stash. |
 | 2. Extract | Copy the stash up to and including the first `\n` (or to the end if there is none). This is the returned line. |
 | 3. Clean | Keep only what comes after the `\n` in the stash, for the next call. |
-| 4. Stop | If `read` fails, or the stash is empty at the end of the file: free the stash, set it to `NULL`, return `NULL`. |
+| 4. Stop | If `read` fails, or nothing is left at the end of the file: free the stash, set it to `NULL`, return `NULL`. If nothing remains after the returned line, the stash is freed right away. |
 
 **Example** with `BUFFER_SIZE = 4` and the file `"ab\ncd\n"`:
 
 | Call | Read | Stash before extract | Returned | Stash after |
 |:---:|---|---|---|---|
 | 1 | `"ab\nc"` | `"ab\nc"` | `"ab\n"` | `"c"` |
-| 2 | `"d\n"` | `"cd\n"` | `"cd\n"` | `""` |
-| 3 | nothing | `""` | `NULL` | freed |
+| 2 | `"d\n"` | `"cd\n"` | `"cd\n"` | freed (`NULL`) |
+| 3 | nothing (`read` returns 0) | `""` | `NULL` | freed (`NULL`) |
 
 **Why this approach**
 
@@ -115,7 +115,7 @@ returned.
   large `BUFFER_SIZE` it uses more memory per call, but works the same way.
 
 **Bonus:** the single static variable is an array of stashes indexed by the file
-descriptor (`stash[fd]`), so each fd keeps its own reading state.
+descriptor (`reserve[fd]`, `FD_MAX` = 1024), so each fd keeps its own reading state.
 
 ## Project structure
 
@@ -136,11 +136,11 @@ get_next_line/
 
 | Category | Cases |
 |---|---|
-| `BUFFER_SIZE` | 1, 2, 42, 9999, 10000000 |
+| `BUFFER_SIZE` | 1, 2, 5, 41, 42, 43, 1000, 9999, 10000000 |
 | Files | empty, one line, no final `\n`, only `\n`, very long lines |
 | Other fds | standard input, invalid fd (`-1`, `42`), closed fd |
 | Bonus | alternate calls on 3 files: fd 3 → 4 → 5 → 3 … |
-| Quality | `valgrind --leak-check=full`, `norminette` |
+| Quality | `-fsanitize=address` (overflows and leaks), `valgrind --leak-check=full`, `norminette` |
 
 ## Resources
 
@@ -151,5 +151,8 @@ get_next_line/
 
 ### Use of AI
 
-I used AI to organise the work plan and to structure this README. The code of the
-function was written by me.
+I used AI as a learning tool to explain theoretical concepts (static variables, file
+descriptors, how `read` works, memory management) and to help organise the work plan
+and structure this README. I also used it to write a test suite and to review my code:
+it pointed out a buffer overflow (`BUFFER_SIZE + 1`), memory leaks in the stash cleaning,
+and norm formatting issues, which were then fixed. I reviewed and understood each fix.
