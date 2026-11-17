@@ -4,3 +4,4 @@ main.c
 tests/
 *.txt
 .vscode/
+ma_main.c
