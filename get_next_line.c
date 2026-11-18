@@ -6,7 +6,7 @@
 /*   By: haait-ba <haait-ba@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/11/17 15:38:51 by haait-ba          #+#    #+#             */
-/*   Updated: 2026/11/17 22:21:14 by haait-ba         ###   ########.fr       */
+/*   Updated: 2026/11/18 18:10:53 by haait-ba         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,10 +14,10 @@
 
 static char	*lire_fichier(int fd, char *reserve)
 {
-	int		octets_lus;
+	ssize_t	octets_lus;
 	char	*buffer;
 
-	buffer = malloc(sizeof(char) * (BUFFER_SIZE + 1));
+	buffer = malloc(sizeof(char) * ((size_t)BUFFER_SIZE + 1));
 	if (!buffer)
 		return (free(reserve), NULL);
 	octets_lus = 1;
